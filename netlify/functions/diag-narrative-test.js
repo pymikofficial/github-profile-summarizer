@@ -14,6 +14,13 @@ const COMMON_WORDS = new Set([
 ]);
 
 exports.handler = async () => {
+  const key = process.env.ANTHROPIC_API_KEY || '';
+  const keyInfo = {
+    length: key.length,
+    hasWhitespace: /\s/.test(key),
+    hasLeadingOrTrailingWhitespace: key !== key.trim()
+  };
+
   const narrativeFacts = {
     username: 'pymikofficial',
     publicRepoCount: 31,
@@ -42,7 +49,7 @@ Respond with ONLY the 1-2 sentence summary text, no preamble, no quotes, no mark
     });
     if (!res.ok) {
       const errText = await res.text();
-      return { statusCode: 200, body: JSON.stringify({ apiError: true, status: res.status, errText: errText.slice(0, 1000) }) };
+      return { statusCode: 200, body: JSON.stringify({ apiError: true, status: res.status, errText: errText.slice(0, 1000), keyInfo }) };
     }
     const data = await res.json();
     const text = data.content.filter((b) => b.type === 'text').map((b) => b.text).join('\n').trim();
