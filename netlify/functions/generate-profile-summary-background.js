@@ -182,14 +182,7 @@ exports.handler = async (event) => {
     };
 
     // --- narrative: one Claude call, validated, one retry, then template fallback ---
-    // TEMP TEST HOOK (self-review step 2): forceBadNarrative:true in the
-    // request body skips Claude and validates a deliberately fabricated
-    // narrative, to prove the fallback path actually triggers. Remove after use.
-    const narrative = body.forceBadNarrative
-      ? (validateNarrative('This uses TotallyFakeRepo and the FabricatedLang language.', facts)
-          ? 'TEST HOOK BROKEN: bad narrative incorrectly passed validation'
-          : buildTemplateFallback(facts))
-      : await generateValidatedNarrative(facts);
+    const narrative = await generateValidatedNarrative(facts);
 
     await store.setJSON(jobId, { status: 'done', ...facts, narrative });
   } catch (err) {
