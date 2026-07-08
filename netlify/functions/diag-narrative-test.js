@@ -40,6 +40,10 @@ Respond with ONLY the 1-2 sentence summary text, no preamble, no quotes, no mark
       },
       body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 300, messages: [{ role: 'user', content: prompt }] })
     });
+    if (!res.ok) {
+      const errText = await res.text();
+      return { statusCode: 200, body: JSON.stringify({ apiError: true, status: res.status, errText: errText.slice(0, 1000) }) };
+    }
     const data = await res.json();
     const text = data.content.filter((b) => b.type === 'text').map((b) => b.text).join('\n').trim();
 
