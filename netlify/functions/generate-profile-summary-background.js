@@ -286,8 +286,14 @@ function validateNarrative(text, facts) {
 
   const allowed = new Set(COMMON_WORDS);
   allowed.add(facts.username.toLowerCase());
-  for (const l of facts.languageBreakdown) allowed.add(l.language.toLowerCase());
-  for (const r of facts.flaggedRepos) allowed.add(r.name.toLowerCase());
+  for (const l of facts.languageBreakdown) {
+    allowed.add(l.language.toLowerCase());
+    for (const word of l.language.toLowerCase().split(/\s+/)) allowed.add(word);
+  }
+  for (const r of facts.flaggedRepos) {
+    allowed.add(r.name.toLowerCase());
+    for (const word of r.name.toLowerCase().split('-')) allowed.add(word);
+  }
 
   // repo-name-shaped tokens (lowercase alnum joined by hyphens, GitHub's naming convention)
   const repoLikeTokens = text.match(/\b[a-z0-9]+(?:-[a-z0-9]+)+\b/gi) || [];
