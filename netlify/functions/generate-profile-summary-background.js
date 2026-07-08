@@ -256,13 +256,25 @@ function buildNarrativePrompt(facts, strict) {
     ? '\n\nSTRICT MODE: your previous attempt referenced something not present in the facts below. This time, use ONLY the exact username, repo names, and language names given below, nothing else capitalized or repo-name-shaped may appear in your output.'
     : '';
 
+  // Deliberately exclude readmeExcerpt/url here: those are free text pulled
+  // from repos and full of capitalized words/tokens that aren't safe for the
+  // model to echo. The narrative may only draw from these bare facts.
+  const narrativeFacts = {
+    username: facts.username,
+    publicRepoCount: facts.publicRepoCount,
+    languageBreakdown: facts.languageBreakdown,
+    activeRepoCount: facts.activeRepoCount,
+    staleRepoCount: facts.staleRepoCount,
+    flaggedRepoNames: facts.flaggedRepos.map((r) => r.name)
+  };
+
   return [
     {
       role: 'user',
       content: `You write a single short recruiter-facing summary (1-2 sentences) of a developer's GitHub activity. You must ONLY reference facts present in the JSON below: the username, repo names, language names, and counts. Never introduce a repo name, language, or claim about skill or style that isn't directly supported by this JSON. Do not invent adjectives about code quality. Plain, factual, recruiter-readable tone.${strictNote}
 
 Facts:
-${JSON.stringify(facts, null, 2)}
+${JSON.stringify(narrativeFacts, null, 2)}
 
 Respond with ONLY the 1-2 sentence summary text, no preamble, no quotes, no markdown.`
     }
