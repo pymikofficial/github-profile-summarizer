@@ -5,6 +5,16 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>GitHub Profile Summarizer | cosmik.work</title>
 <meta name="description" content="Paste a GitHub username, get a recruiter-readable summary of what that person actually builds: language breakdown, active vs stale repos, and flagged repos with real README excerpts.">
+<link rel="canonical" href="https://github-profile-summarizer.netlify.app/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="GitHub Profile Summarizer | cosmik.work">
+<meta property="og:description" content="Paste a GitHub username, get a recruiter-readable summary of what that person actually builds: language breakdown, active vs stale repos, and flagged repos with real README excerpts.">
+<meta property="og:url" content="https://github-profile-summarizer.netlify.app/">
+<meta property="og:image" content="https://cosmik.work/img/cosmikwork_broad_logo.webp">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="GitHub Profile Summarizer | cosmik.work">
+<meta name="twitter:description" content="Paste a GitHub username, get a recruiter-readable summary of what that person actually builds: language breakdown, active vs stale repos, and flagged repos with real README excerpts.">
+<meta name="twitter:image" content="https://cosmik.work/img/cosmikwork_broad_logo.webp">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500&family=Inter+Tight:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -159,6 +169,12 @@ footer a{color:var(--accent-bright);text-decoration:none;}
 footer a:hover{text-decoration:underline;}
 
 :focus-visible{outline:2px solid var(--accent-bright);outline-offset:2px;}
+.skip-link{
+  position:absolute;left:-9999px;top:0;z-index:100;
+  background:var(--accent);color:#fff;padding:12px 20px;border-radius:0 0 10px 0;
+  font-family:'JetBrains Mono',monospace;font-size:12px;text-decoration:none;
+}
+.skip-link:focus{left:0;}
 
 @media(max-width:520px){
   .profile-card{padding:22px 20px;}
@@ -168,7 +184,9 @@ footer a:hover{text-decoration:underline;}
 </head>
 <body>
 
-<main>
+<a class="skip-link" href="#main">Skip to content</a>
+
+<main id="main">
   <p class="eyebrow">cosmik.work · 11 · Portfolio Audit</p>
   <h1>See what someone's <em>actually</em> shipped.</h1>
   <p class="sub">Paste a GitHub username. Every fact below (language breakdown, active vs stale repos, flagged repos with real README excerpts) comes straight from GitHub's API, computed in plain code. The one sentence at the top is the only part a model writes, and it's checked against those same facts before it ships.</p>
