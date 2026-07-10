@@ -230,8 +230,12 @@ footer a:hover{text-decoration:underline;}
   usernameEl.addEventListener('keydown', (e) => { if (e.key === 'Enter') start(); });
 
   async function start(){
-    const username = usernameEl.value.trim() || usernameEl.placeholder;
-    if (!username) { usernameEl.focus(); return; }
+    const username = usernameEl.value.trim();
+    if (!username) {
+      usernameEl.focus();
+      setStatus('Enter a GitHub username first.', true);
+      return;
+    }
 
     const jobId = (crypto.randomUUID ? crypto.randomUUID()
       : 'job-' + Date.now() + '-' + Math.random().toString(36).slice(2));
