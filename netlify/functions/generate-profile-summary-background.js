@@ -24,6 +24,36 @@ const BLOBS_CONFIG = {
 
 const ACTIVE_WINDOW_DAYS = 180;
 const README_EXCERPT_CHARS = 300;
+const DAILY_CAP = parseInt(process.env.DAILY_CAP || '30', 10);
+const DAILY_CAP_PER_IP = parseInt(process.env.DAILY_CAP_PER_IP || '8', 10);
+const USERNAME_RE = /^[a-zA-Z0-9](?:[a-zA-Z0-9]|-(?=[a-zA-Z0-9])){0,38}$/;
+
+function clientIp(event) {
+  return (event.headers['x-nf-client-connection-ip'] || event.headers['x-forwarded-for'] || 'unknown').split(',')[0].trim();
+}
+
+// Netlify Blobs has no conditional/compare-and-swap write, so a true atomic
+// increment isn't possible here. This narrows (does not eliminate) the race
+// window between the check and the write.
+async function checkAndBumpUsage(limitStore, key, cap) {
+  const read = async () => {
+    try {
+      return parseInt((await limitStore.get(key)) || '0', 10);
+    } catch (e) {
+      return 0;
+    }
+  };
+
+  if ((await read()) >= cap) return false;
+
+  await new Promise((resolve) => setTimeout(resolve, Math.floor(Math.random() * 120)));
+
+  const count = await read();
+  if (count >= cap) return false;
+
+  await limitStore.set(key, String(count + 1));
+  return true;
+}
 
 const COMMON_WORDS = new Set([
   'a','an','the','and','or','but','with','without','for','from','into','of','on','in','at','to','by','is','are',
@@ -42,7 +72,8 @@ exports.handler = async (event) => {
 
   try {
     const body = JSON.parse(event.body || '{}');
-    jobId = body.jobId;
+    const jobIdRaw = (body.jobId || '').toString();
+    jobId = /^[a-zA-Z0-9-]{1,64}$/.test(jobIdRaw) ? jobIdRaw : null;
     const usernameRaw = (body.username || '').trim();
 
     if (!jobId) {
@@ -53,6 +84,26 @@ exports.handler = async (event) => {
 
     if (!usernameRaw) {
       await store.setJSON(jobId, { status: 'error', message: 'Missing username.' });
+      return;
+    }
+    if (!USERNAME_RE.test(usernameRaw)) {
+      await store.setJSON(jobId, { status: 'error', message: 'That doesn\'t look like a valid GitHub username.' });
+      return;
+    }
+
+    // --- Guardrail: daily generation cap, global and per-IP. This is the only ---
+    // --- endpoint in this repo that talks to GitHub + Claude, so it's the one ---
+    // --- that needs to be capped, unlike a read-only status check. ---
+    const today = new Date().toISOString().slice(0, 10);
+    const limitStore = getStore({ name: 'rate-limits', ...BLOBS_CONFIG });
+    const globalOk = await checkAndBumpUsage(limitStore, `profiles-${today}`, DAILY_CAP);
+    if (!globalOk) {
+      await store.setJSON(jobId, { status: 'error', message: "Today's free generation limit has been reached. Come back tomorrow." });
+      return;
+    }
+    const ipOk = await checkAndBumpUsage(limitStore, `profiles-${today}-ip-${clientIp(event)}`, DAILY_CAP_PER_IP);
+    if (!ipOk) {
+      await store.setJSON(jobId, { status: 'error', message: "You've hit today's per-user generation limit. Come back tomorrow." });
       return;
     }
 
@@ -69,7 +120,8 @@ exports.handler = async (event) => {
     }
     if (!userRes.ok) {
       const errText = await userRes.text();
-      await store.setJSON(jobId, { status: 'error', message: `GitHub API ${userRes.status}: ${errText.slice(0, 300)}` });
+      console.error('github-profile-summarizer GitHub API error:', userRes.status, errText.slice(0, 500));
+      await store.setJSON(jobId, { status: 'error', message: 'Could not read that GitHub profile right now. Try again in a minute.' });
       return;
     }
     const user = await userRes.json();
@@ -105,7 +157,8 @@ exports.handler = async (event) => {
       }
       if (!reposRes.ok) {
         const errText = await reposRes.text();
-        await store.setJSON(jobId, { status: 'error', message: `GitHub API ${reposRes.status}: ${errText.slice(0, 300)}` });
+        console.error('github-profile-summarizer GitHub API error:', reposRes.status, errText.slice(0, 500));
+        await store.setJSON(jobId, { status: 'error', message: 'Could not read that GitHub profile right now. Try again in a minute.' });
         return;
       }
       const pageRepos = await reposRes.json();
