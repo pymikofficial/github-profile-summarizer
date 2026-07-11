@@ -39,4 +39,8 @@ Note: `getStore()` must be called with explicit `siteID` and `token`. Relying on
 2. `npm install`
 3. `netlify dev` (with the env vars above set)
 
+## Smoke test
+
+`npm test` (or `node scripts/smoke-test.mjs [base_url] [github_username]`) summarizes a real public profile (defaults to `torvalds`) against the live site and checks the computed facts are well-formed (repo counts, language breakdown, active/stale split, flagged repos) and that a narrative was generated. It's a spot check on the pipeline end to end, not a re-implementation of `validateNarrative()`, the guardrail that actually enforces the no-invented-facts rule lives in the function itself.
+
 Built by [Soumik Chatterjee](https://cosmik.work).

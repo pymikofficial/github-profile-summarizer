@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "Paste a GitHub username, get a recruiter-readable summary of what that person actually builds: language breakdown, active vs stale repos, and flagged repos with real README excerpts. Built by Soumik Chatterjee / cosmik.work.",
   "private": true,
+  "scripts": {
+    "test": "node scripts/smoke-test.mjs"
+  },
   "dependencies": {
     "@netlify/blobs": "^8.1.0"
   }
